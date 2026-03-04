@@ -55,8 +55,8 @@ export async function extractBoxData(base64Image: string, mimeType: string, retr
 
   for (let i = 0; i <= retries; i++) {
     try {
-      // Try gemini-2.5-flash as it might be more stable with certain keys
-      const modelName = 'gemini-2.5-flash'; 
+      // Try gemini-3-flash-preview as it is the recommended model
+      const modelName = 'gemini-3-flash-preview'; 
       console.log(`[extractBoxData] Attempt ${i + 1} with model ${modelName}`);
       
       const response = await ai.models.generateContent({
