@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useBoxStore } from '@/store/useBoxStore';
-import { Search, PackageOpen, Filter, Share2, Copy, Check, X, Settings, Download } from 'lucide-react';
+import { Search, PackageOpen, Filter, X, Settings, Download } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -11,16 +11,11 @@ export default function Dashboard() {
   const { boxes, isLoaded, loadBoxes, moveId, setMoveId } = useBoxStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [hasCopied, setHasCopied] = useState(false);
   const [isSwitchingMove, setIsSwitchingMove] = useState(false);
   const [targetMoveId, setTargetMoveId] = useState('');
   const [envStatus, setEnvStatus] = useState<any>(null);
   const [isLoadingEnv, setIsLoadingEnv] = useState(false);
-
-  // The Shared App URL from the runtime environment
-  const SHARED_APP_URL = 'https://ais-pre-jqwk2dof7cnjewfctxm4u6-448977390741.europe-west2.run.app';
 
   const handleExportCSV = () => {
     if (boxes.length === 0) {
@@ -143,16 +138,6 @@ export default function Dashboard() {
     return result;
   }, [boxes, searchQuery, selectedRoom]);
 
-  const handleShare = () => {
-    // Use the Shared App URL if available, otherwise fallback to origin
-    const baseUrl = SHARED_APP_URL || window.location.origin;
-    const shareUrl = `${baseUrl}/?moveId=${moveId}`;
-    navigator.clipboard.writeText(shareUrl);
-    setHasCopied(true);
-    toast.success('Share link copied to clipboard!');
-    setTimeout(() => setHasCopied(false), 2000);
-  };
-
   if (!isLoaded) {
     return <div className="flex justify-center items-center h-64">
       <div className="animate-pulse flex space-x-4">
@@ -187,12 +172,6 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center space-x-2 sm:hidden">
             <button 
-              onClick={() => setIsShareModalOpen(true)}
-              className="p-2 text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
-            <button 
               onClick={() => setIsSettingsModalOpen(true)}
               className="p-2 text-slate-600 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors"
             >
@@ -216,13 +195,6 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center space-x-2">
             <button 
-              onClick={() => setIsShareModalOpen(true)}
-              className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="text-sm font-medium">Share</span>
-            </button>
-            <button 
               onClick={() => setIsSettingsModalOpen(true)}
               className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm active:scale-95"
             >
@@ -232,77 +204,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* Share Modal */}
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900">Share Your Move</h3>
-              <button onClick={() => setIsShareModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <h4 className="text-sm font-bold text-amber-900 mb-2 flex items-center">
-                  <span className="bg-amber-200 text-amber-800 text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider mr-2">Preview Mode</span>
-                  Live Sharing Unavailable
-                </h4>
-                <p className="text-sm text-amber-800 mb-3">
-                  Because this is a secure preview environment, the live app link is locked to your Google account. Your wife cannot access the live app directly.
-                </p>
-                <p className="text-sm text-amber-800 font-medium">
-                  To share your inventory, please export it as a spreadsheet:
-                </p>
-                <button 
-                  onClick={() => {
-                    handleExportCSV();
-                    setIsShareModalOpen(false);
-                  }}
-                  className="mt-3 w-full py-2.5 bg-white text-amber-900 border border-amber-300 rounded-lg text-sm font-bold hover:bg-amber-100 transition-colors flex items-center justify-center shadow-sm"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Spreadsheet (CSV)
-                </button>
-              </div>
-
-              <div className="pt-4 border-t border-gray-100">
-                <h4 className="text-sm font-bold text-gray-900 mb-2">How to Deploy for Real</h4>
-                <div className="text-sm text-gray-600 space-y-3">
-                  <p>To give your wife full access to the app on her phone, you can deploy it publicly:</p>
-                  <ol className="list-decimal pl-4 space-y-2">
-                    <li>
-                      <strong>Sync to GitHub:</strong> Click the &quot;GitHub&quot; button in the top-right of this editor to create a repository.
-                    </li>
-                    <li>
-                      <strong>Deploy to Vercel:</strong> Go to <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">vercel.com</a>, import your new GitHub repo, and deploy it.
-                    </li>
-                    <li>
-                      <strong>Add Environment Variables:</strong> In Vercel Project Settings, add these variables:
-                      <ul className="list-disc pl-4 mt-1 space-y-1 text-xs font-mono bg-gray-50 p-2 rounded border border-gray-200">
-                        <li>NEXT_PUBLIC_GEMINI_API_KEY</li>
-                        <li>NEXT_PUBLIC_SUPABASE_URL</li>
-                        <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
-                      </ul>
-                    </li>
-                  </ol>
-                  <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-100 text-xs text-green-800">
-                    <strong>Real-Time Sync Ready!</strong> This app is now configured to use Supabase. Once deployed with the keys above, you and your wife can edit the same list in real-time!
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setIsShareModalOpen(false)}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Settings Modal */}
       {isSettingsModalOpen && (
