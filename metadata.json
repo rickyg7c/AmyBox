@@ -1,0 +1,5 @@
+{
+  "name": "Amybox",
+  "description": "A elegant moving inventory app that uses Vision AI to scan box contents from photos and make them searchable.",
+  "requestFramePermissions": []
+}
