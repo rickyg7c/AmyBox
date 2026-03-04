@@ -96,6 +96,9 @@ export const useBoxStore = create<BoxState>((setStore, getStore) => ({
           
           if (payload.eventType === 'INSERT') {
             const newBox = payload.new;
+            // Prevent duplicates if already added optimistically
+            if (currentBoxes.some(b => b.id === newBox.id)) return;
+
             const mappedBox: Box = {
               id: newBox.id,
               boxNumber: newBox.box_number,
@@ -157,13 +160,24 @@ export const useBoxStore = create<BoxState>((setStore, getStore) => ({
       photo_url: boxData.photoUrl,
     };
 
-    const { error } = await supabase.from('boxes').insert(dbBox);
+    const { data, error } = await supabase.from('boxes').insert(dbBox).select().single();
 
     if (error) {
       console.error('Error adding box:', error);
       toast.error('Failed to add box');
+    } else if (data) {
+      // Update local state immediately so user sees it without waiting for realtime
+      const mappedBox: Box = {
+        id: data.id,
+        boxNumber: data.box_number,
+        destinationRoom: data.destination_room,
+        items: data.items || [],
+        photoUrl: data.photo_url,
+        createdAt: new Date(data.created_at).getTime(),
+        moveId: data.move_id
+      };
+      setStore({ boxes: [...boxes, mappedBox].sort((a, b) => a.boxNumber - b.boxNumber) });
     }
-    // Optimistic update is tricky with auto-generated IDs, so we rely on subscription
   },
 
   updateBox: async (id, updates) => {
@@ -184,14 +198,27 @@ export const useBoxStore = create<BoxState>((setStore, getStore) => ({
     if (updates.items !== undefined) dbUpdates.items = updates.items;
     if (updates.photoUrl !== undefined) dbUpdates.photo_url = updates.photoUrl;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('boxes')
       .update(dbUpdates)
-      .eq('id', id);
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) {
       console.error('Error updating box:', error);
       toast.error('Failed to update box');
+    } else if (data) {
+      // Update local state immediately
+      setStore({
+        boxes: boxes.map(b => b.id === id ? {
+          ...b,
+          boxNumber: data.box_number,
+          destinationRoom: data.destination_room,
+          items: data.items || [],
+          photoUrl: data.photo_url,
+        } : b).sort((a, b) => a.boxNumber - b.boxNumber)
+      });
     }
   },
 
@@ -214,6 +241,11 @@ export const useBoxStore = create<BoxState>((setStore, getStore) => ({
     if (error) {
       console.error('Error deleting box:', error);
       toast.error('Failed to delete box');
+    } else {
+      // Update local state immediately
+      setStore({
+        boxes: boxes.filter(b => b.id !== id)
+      });
     }
   },
 }));
